@@ -12,10 +12,17 @@ library(rnaturalearthdata)
 # Read in observation/occurrence data from CSV file
 df <- read.csv("Coelomomyces_Observations.csv")
 
+#Add no in lab observations to empty cells in lab column
+df$Laboratory.Experiment[df$Laboratory.Experiment == ""] <- "no"
+
+
 ##### Occurrences per country ####
 
-# Count the number of occurrence records for each country
-country_counts <- df %>%
+# Filter the dataframe to only records where lab == "no"
+df_no_lab <- df %>% filter(Laboratory.Experiment == "no")
+
+# Count the number of occurrence records for each country (for lab == "no")
+country_counts <- df_no_lab %>%
   count(Countries, name = "Occurrences")
 
 # Join the occurrences data to world map country polygons, matching by country name
@@ -24,51 +31,106 @@ sPDF <- joinCountryData2Map(country_counts,
                             nameJoinColumn = "Countries",
                             verbose = TRUE)
 
-# Find the maximum number of occurrences for palette creation (not strictly required for fixedWidth, but shown here for reference)
+# Find the maximum number of occurrences for palette creation
 max_value <- max(sPDF@data$Occurrences, na.rm = TRUE)
 
-
-# Create a yellow to red palette for a smooth, continuous gradient (100 colors recommended for visual clarity)
+# Create a blue to red palette for a smooth gradient (100 colors)
 my_palette <- colorRampPalette(c("lightblue", "blue", "yellow", "orange", "red"))
 colors <- my_palette(100)
 
-# Plot a world map colored by number of occurrences per country,
-# using fixed-width bins for a continuous gradient legend
+# Plot the world map using only occurrence records with lab == "no"
 mapCountryData(sPDF,
-               nameColumnToPlot = "Occurrences",     # Use occurrence counts to color each country
-               colourPalette = colors,               # Apply the yellow-to-red color palette
-               catMethod = "fixedWidth",             # Use evenly spaced bins for a continuous legend
-               numCats = 100,                        # 100 color steps for smooth gradient
-               mapTitle = "Coelomomyces Occurrences by Country",
-               addLegend = TRUE                      # Show legend on the map
+               nameColumnToPlot = "Occurrences",
+               colourPalette = colors,
+               catMethod = "fixedWidth",
+               numCats = 100,
+               mapTitle = "Coelomomyces Field Occurrences by Country",
+               addLegend = TRUE
 )
 
+
+#save as png
+png("Coelomomyces_Occurrences_by_Country.png")  # Start writing to PDF
+
+mapCountryData(sPDF,
+               nameColumnToPlot = "Occurrences",
+               colourPalette = colors,
+               catMethod = "fixedWidth",
+               numCats = 100,
+               mapTitle = "Coelomomyces Field Occurrences by Country",
+               addLegend = TRUE
+)
+
+dev.off()  # Finish writing to PDF
+
+
+
+#save as pdf
+pdf("Coelomomyces_Occurrences_by_Country.pdf")  # Start writing to PDF
+
+mapCountryData(sPDF,
+               nameColumnToPlot = "Occurrences",
+               colourPalette = colors,
+               catMethod = "fixedWidth",
+               numCats = 100,
+               mapTitle = "Coelomomyces Field Occurrences by Country",
+               addLegend = TRUE
+)
+
+dev.off()  # Finish writing to PDF
 
 
 ##### Richness Map ####
 
-# Calculate the number of unique species (richness) reported in each country
+# Calculate unique species richness per country, for lab == "no"
 species_per_country <- df %>%
+  filter(Laboratory.Experiment == "no") %>%
   group_by(Countries) %>%
   summarise(UniqueSpecies = n_distinct(Species))
 
-# Join the species richness data to world map country polygons, matching by country name
+# Proceed with the same mapping code as before
 sPDF <- joinCountryData2Map(species_per_country,
                             joinCode = "NAME",
                             nameJoinColumn = "Countries",
                             verbose = TRUE)
 
-# Create the same yellow to red palette for mapping species richness
 my_palette <- colorRampPalette(c("lightblue", "blue", "yellow", "orange", "red"))
 colors <- my_palette(100)
 
-# Plot a world map colored by species richness per country,
-# using a continuous gradient and showing legend
 mapCountryData(sPDF, 
-               nameColumnToPlot = "UniqueSpecies",    # Color by number of unique species
-               colourPalette = colors,                # Apply yellow-to-red color gradient
-               catMethod = "fixedWidth",              # Continuous legend
-               numCats = 100,                         # 100 color bins
-               mapTitle = "Coelomomyces Richness by Country",
+               nameColumnToPlot = "UniqueSpecies",
+               colourPalette = colors,
+               catMethod = "fixedWidth",
+               numCats = 100,
+               mapTitle = "Coelomomyces Species Richness by Country",
                addLegend = TRUE
 )
+
+#save as png
+png("Coelomomyces_Richness_by_Country.png", width = 1200, height = 800, res = 150)
+
+mapCountryData(sPDF, 
+               nameColumnToPlot = "UniqueSpecies",
+               colourPalette = colors,
+               catMethod = "fixedWidth",
+               numCats = 100,
+               mapTitle = "Coelomomyces Species Richness by Country",
+               addLegend = TRUE
+)
+
+dev.off()
+
+
+#save as pdf
+pdf("Coelomomyces_Richness_by_Country.pdf")  # Start writing to PDF
+
+mapCountryData(sPDF, 
+               nameColumnToPlot = "UniqueSpecies",
+               colourPalette = colors,
+               catMethod = "fixedWidth",
+               numCats = 100,
+               mapTitle = "Coelomomyces Species Richness by Country",
+               addLegend = TRUE
+)
+
+dev.off()  # Finish writing to PDF
